@@ -13,12 +13,12 @@ getMessage() {
 }
 
 question() {
-    local message="$1"
+    local msg="$1"
     if [ "$X" ]; then
-        zenity --question --no-wrap --text "$message" || exit 1
+        zenity --question --no-wrap --text "$msg" || exit 1
     else
-        echo "$message"
-        read answer
+        echo "$msg"
+        read -r answer
         case "$answer" in
             y | yes) ;;
             *) exit 1;;
@@ -27,39 +27,39 @@ question() {
 }
 
 info() {
-    local message="$1"
+    local msg="$1"
     if [ "$X" ]; then
-        zenity --info --no-wrap --text "$message"
+        zenity --info --no-wrap --text "$msg"
     else
-        echo "$message"
+        echo "$msg"
     fi
 }
 
 warning() {
-    local message="$1"
+    local msg="$1"
     if [ "$X" ]; then
-        zenity --warning --no-wrap --text "$message"
+        zenity --warning --no-wrap --text "$msg"
     else
-        echo "WARNING: $message" >&2
+        echo "WARNING: $msg" >&2
     fi
 }
 
 error() {
-    local message="$1"
+    local msg="$1"
     if [ "$X" ]; then
-        zenity --error --no-wrap --text "$message"
+        zenity --error --no-wrap --text "$msg"
     else
-        echo "*** ERROR: $message" >&2
+        echo "*** ERROR: $msg" >&2
     fi
 }
 
 progress() {
-    local message="$1"
+    local msg="$1"
     if [ "$X" ]; then
-        zenity --progress --pulsate --auto-close --auto-kill --text "$message"
+        zenity --progress --pulsate --auto-close --auto-kill --text "$msg"
     else
-        echo -n "$message"
-        while read _; do :; done
+        echo -n "$msg"
+        while read -r _; do :; done
         echo
         echo "Done."
     fi
@@ -73,6 +73,7 @@ fi
 [ ! -t 0 ] && X=1
 
 inputfile="$1"
+pwd="$(realpath "${inputfile%/*}")"
 
 # Read in all lines starting with "#::". Those lines I declare to be trigger
 # options.
@@ -127,12 +128,14 @@ if [ $someExist = 1 ]; then
     if [ "${#dirsExist}" != 0 ]; then
         addMessage "" "DIRECTORIES:"
         for item in "${dirsExist[@]}"; do
+            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
             addMessage "$item"
         done
     fi
     if [ "${#othersExist}" != 0 ]; then
         addMessage "" "OTHER FILES:"
         for item in "${othersExist[@]}"; do
+            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
             addMessage "$item"
         done
     fi
@@ -143,11 +146,11 @@ if [ $someExist = 1 ]; then
 fi
 
 (
-pwd="$(realpath "${inputfile%/*}")"
 for item in "${ITEMS[@]}"; do
     src="$pwd/$item"
     dst="/$item"
     mkdir -p "${dst%/*}"
+    [ ! -e "$src" ] && cp -a "$dst" "$src"
     rm -rf "$dst"
     ln -s $optRelative "$src" "$dst"
     chown --no-dereference --reference="$src" "$dst"
