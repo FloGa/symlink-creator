@@ -18,7 +18,7 @@ question() {
         zenity --question --no-wrap --text "$msg" || exit 1
     else
         echo "$msg"
-        read answer
+        read -r answer
         case "$answer" in
             y | yes) ;;
             *) exit 1;;
@@ -59,7 +59,7 @@ progress() {
         zenity --progress --pulsate --auto-close --auto-kill --text "$msg"
     else
         echo -n "$msg"
-        while read _; do :; done
+        while read -r _; do :; done
         echo
         echo "Done."
     fi
