@@ -128,12 +128,14 @@ if [ $someExist = 1 ]; then
     if [ "${#dirsExist}" != 0 ]; then
         addMessage "" "DIRECTORIES:"
         for item in "${dirsExist[@]}"; do
+            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
             addMessage "$item"
         done
     fi
     if [ "${#othersExist}" != 0 ]; then
         addMessage "" "OTHER FILES:"
         for item in "${othersExist[@]}"; do
+            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
             addMessage "$item"
         done
     fi
@@ -148,6 +150,7 @@ for item in "${ITEMS[@]}"; do
     src="$pwd/$item"
     dst="/$item"
     mkdir -p "${dst%/*}"
+    [ ! -e "$src" ] && cp -a "$dst" "$src"
     rm -rf "$dst"
     ln -s $optRelative "$src" "$dst"
     chown --no-dereference --reference="$src" "$dst"
