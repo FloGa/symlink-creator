@@ -73,6 +73,7 @@ fi
 [ ! -t 0 ] && X=1
 
 inputfile="$1"
+pwd="$(realpath "${inputfile%/*}")"
 
 # Read in all lines starting with "#::". Those lines I declare to be trigger
 # options.
@@ -143,7 +144,6 @@ if [ $someExist = 1 ]; then
 fi
 
 (
-pwd="$(realpath "${inputfile%/*}")"
 for item in "${ITEMS[@]}"; do
     src="$pwd/$item"
     dst="/$item"
