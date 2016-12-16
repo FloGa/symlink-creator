@@ -155,6 +155,7 @@ for item in "${ITEMS[@]}"; do
         cp -a "$dst" "$src"
     fi
     rm -rf "$dst"
+    mkdir -p "${dst%/*}"
     ln -s $optRelative "$src" "$dst"
     chown --no-dereference --reference="$src" "$dst"
 done
