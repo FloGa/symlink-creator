@@ -1,3 +1,5 @@
+# Changes in 0.2.1
+
 # Changes in 0.2.0
 
 -   Rename message variable to avoid confusions
