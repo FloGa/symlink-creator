@@ -1,3 +1,9 @@
+# Changes in 0.2.1
+
+-   Create directory first before copying
+
+-   Create directory first before linking
+
 # Changes in 0.2.0
 
 -   Rename message variable to avoid confusions
