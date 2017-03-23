@@ -98,6 +98,11 @@ for opt in "${OPTS[@]}"; do
             # Execute script as root
             [ "$UID" != 0 ] && exec sudo "$0" "$@"
             ;;
+        --user=*)
+            # Execute script as different user
+            user="${opt#*=}"
+            [ "$USER" != "$user" ] && exec sudo -u "$user" "$0" "$@"
+            ;;
     esac
 done
 
