@@ -81,6 +81,7 @@ readarray -t OPTS < <(grep "^#::" "$inputfile")
 optBasedir=
 optPreserveOwner=
 optRelative=
+optSeparator=
 for opt in "${OPTS[@]}"; do
     opt="${opt#\#::}"
     while [ "$opt" != "${opt# }" ]; do
@@ -97,6 +98,9 @@ for opt in "${OPTS[@]}"; do
         -r | --relative)
             # Create symlinks relative to link location
             optRelative="--relative"
+            ;;
+        --separator=*)
+            optSeparator="${opt#*=}"
             ;;
         --root)
             warning "--root is deprecated, please use --user=root instead!"
@@ -115,6 +119,12 @@ if [ "$optBasedir" ]; then
     basedir="$(realpath "$optBasedir")"
 else
     basedir="$(realpath "${inputfile%/*}")"
+fi
+
+if [ "$optSeparator" ]; then
+    separator="$optSeparator"
+else
+    separator="/"
 fi
 
 # Read in all lines except those which start with a "#" or solely consist of
@@ -170,6 +180,7 @@ fi
 (
 for item in "${ITEMS[@]}"; do
     dst="$item"
+    item="${item//\//$separator}"
     src="$basedir/${item#/}"
     mkdir -p "${dst%/*}" || error "Could not create ${dst%/*}"
     if [ ! -e "$src" ]; then
