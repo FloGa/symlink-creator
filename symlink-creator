@@ -118,7 +118,7 @@ for item in "${ITEMS[@]}"; do
     fi
 done
 
-if [ $someExist = 1 ]; then
+if [ "$someExist" ]; then
     if [ "${#linksExist}" != 0 ]; then
         addMessage "" "LINKS:"
         for item in "${linksExist[@]}"; do
