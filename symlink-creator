@@ -51,6 +51,7 @@ error() {
     else
         echo "*** ERROR: $msg" >&2
     fi
+    exit 1
 }
 
 progress() {
@@ -67,7 +68,6 @@ progress() {
 
 if [ ! -r "$1" ]; then
     error "\"$1\" does not exist or is not readable!"
-    exit 1
 fi
 
 [ ! -t 0 ] && X=1
