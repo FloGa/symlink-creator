@@ -95,6 +95,7 @@ for opt in "${OPTS[@]}"; do
             optRelative="--relative"
             ;;
         --root)
+            warning "--root is deprecated, please use --user=root instead!"
             # Execute script as root
             [ "$UID" != 0 ] && exec sudo "$0" "$@"
             ;;
