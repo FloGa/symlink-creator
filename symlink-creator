@@ -149,15 +149,16 @@ fi
 for item in "${ITEMS[@]}"; do
     src="$pwd/$item"
     dst="/$item"
-    mkdir -p "${dst%/*}"
+    mkdir -p "${dst%/*}" || error "Could not create ${dst%/*}"
     if [ ! -e "$src" ]; then
-        mkdir -p "${src%/*}"
-        cp -a "$dst" "$src"
+        mkdir -p "${src%/*}" || error "Could not create ${src%/*}"
+        cp -a "$dst" "$src" || error "Could not copy $dst to $src"
     fi
-    rm -rf "$dst"
-    mkdir -p "${dst%/*}"
-    ln -s $optRelative "$src" "$dst"
-    chown --no-dereference --reference="$src" "$dst"
+    rm -rf "$dst" || error "Could not delete $dst"
+    mkdir -p "${dst%/*}" || error "Could not create ${dst%/*}"
+    ln -s $optRelative "$src" "$dst" || error "Could not link $src to $dst"
+    chown --no-dereference --reference="$src" "$dst" || \
+        error "Could not change ownership of $dst"
 done
 ) |
 progress "Removing existing items and creating symlinks ..."
