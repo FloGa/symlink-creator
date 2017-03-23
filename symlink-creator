@@ -73,12 +73,12 @@ fi
 [ ! -t 0 ] && X=1
 
 inputfile="$1"
-pwd="$(realpath "${inputfile%/*}")"
 
 # Read in all lines starting with "#::". Those lines I declare to be trigger
 # options.
 readarray -t OPTS < <(grep "^#::" "$inputfile")
 
+optBasedir=
 optRelative=
 for opt in "${OPTS[@]}"; do
     opt="${opt#\#::}"
@@ -87,6 +87,9 @@ for opt in "${OPTS[@]}"; do
     done
 
     case "$opt" in
+        --basedir=*)
+            optBasedir="${opt#*=}"
+            ;;
         -r | --relative)
             # Create symlinks relative to link location
             optRelative="--relative"
@@ -98,6 +101,12 @@ for opt in "${OPTS[@]}"; do
     esac
 done
 
+if [ "$optBasedir" ]; then
+    basedir="$(realpath "$optBasedir")"
+else
+    basedir="$(realpath "${inputfile%/*}")"
+fi
+
 # Read in all lines except those which start with a "#" or solely consist of
 # zero or more whitespaces.
 readarray -t ITEMS < <(grep -v "^#\|^\s*$" "$inputfile")
@@ -105,6 +114,7 @@ readarray -t ITEMS < <(grep -v "^#\|^\s*$" "$inputfile")
 declare -a linksExist dirsExist othersExist
 declare -i someExist
 for item in "${ITEMS[@]}"; do
+    item="${item#/}"
     dst="/$item"
     if [ -L "$dst" ]; then
         linksExist+=("$dst")
@@ -128,14 +138,16 @@ if [ "$someExist" ]; then
     if [ "${#dirsExist}" != 0 ]; then
         addMessage "" "DIRECTORIES:"
         for item in "${dirsExist[@]}"; do
-            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
+            [ ! -e "$basedir/${item//\//$separator}" ] && \
+                item+=" (will be copied)"
             addMessage "$item"
         done
     fi
     if [ "${#othersExist}" != 0 ]; then
         addMessage "" "OTHER FILES:"
         for item in "${othersExist[@]}"; do
-            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
+            [ ! -e "$basedir/${item//\//$separator}" ] && \
+                item+=" (will be copied)"
             addMessage "$item"
         done
     fi
@@ -147,8 +159,8 @@ fi
 
 (
 for item in "${ITEMS[@]}"; do
-    src="$pwd/$item"
-    dst="/$item"
+    dst="$item"
+    src="$basedir/${item#/}"
     mkdir -p "${dst%/*}" || error "Could not create ${dst%/*}"
     if [ ! -e "$src" ]; then
         mkdir -p "${src%/*}" || error "Could not create ${src%/*}"
