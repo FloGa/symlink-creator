@@ -51,6 +51,7 @@ error() {
     else
         echo "*** ERROR: $msg" >&2
     fi
+    exit 1
 }
 
 progress() {
@@ -67,19 +68,20 @@ progress() {
 
 if [ ! -r "$1" ]; then
     error "\"$1\" does not exist or is not readable!"
-    exit 1
 fi
 
 [ ! -t 0 ] && X=1
 
 inputfile="$1"
-pwd="$(realpath "${inputfile%/*}")"
 
 # Read in all lines starting with "#::". Those lines I declare to be trigger
 # options.
 readarray -t OPTS < <(grep "^#::" "$inputfile")
 
+optBasedir=
+optPreserveOwner=
 optRelative=
+optSeparator=
 for opt in "${OPTS[@]}"; do
     opt="${opt#\#::}"
     while [ "$opt" != "${opt# }" ]; do
@@ -87,16 +89,45 @@ for opt in "${OPTS[@]}"; do
     done
 
     case "$opt" in
+        --basedir=*)
+            optBasedir="${opt#*=}"
+            ;;
+        --preserve-owner)
+            optPreserveOwner=1
+            ;;
         -r | --relative)
             # Create symlinks relative to link location
             optRelative="--relative"
             ;;
+        --separator=*)
+            optSeparator="${opt#*=}"
+            ;;
         --root)
+            warning "--root is deprecated, please use --user=root instead!"
             # Execute script as root
             [ "$UID" != 0 ] && exec sudo "$0" "$@"
             ;;
+        --user=*)
+            # Execute script as different user
+            user="${opt#*=}"
+            [ "$USER" != "$user" ] && exec sudo -u "$user" "$0" "$@"
+            ;;
     esac
 done
+
+cd "${inputfile%/*}" || error "Directory of input file not accessible!"
+
+if [ "$optBasedir" ]; then
+    basedir="$(realpath "$optBasedir")"
+else
+    basedir="$(realpath .)"
+fi
+
+if [ "$optSeparator" ]; then
+    separator="$optSeparator"
+else
+    separator="/"
+fi
 
 # Read in all lines except those which start with a "#" or solely consist of
 # zero or more whitespaces.
@@ -105,6 +136,7 @@ readarray -t ITEMS < <(grep -v "^#\|^\s*$" "$inputfile")
 declare -a linksExist dirsExist othersExist
 declare -i someExist
 for item in "${ITEMS[@]}"; do
+    item="${item#/}"
     dst="/$item"
     if [ -L "$dst" ]; then
         linksExist+=("$dst")
@@ -118,7 +150,7 @@ for item in "${ITEMS[@]}"; do
     fi
 done
 
-if [ $someExist = 1 ]; then
+if [ "$someExist" ]; then
     if [ "${#linksExist}" != 0 ]; then
         addMessage "" "LINKS:"
         for item in "${linksExist[@]}"; do
@@ -128,14 +160,16 @@ if [ $someExist = 1 ]; then
     if [ "${#dirsExist}" != 0 ]; then
         addMessage "" "DIRECTORIES:"
         for item in "${dirsExist[@]}"; do
-            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
+            [ ! -e "$basedir/${item//\//$separator}" ] && \
+                item+=" (will be copied)"
             addMessage "$item"
         done
     fi
     if [ "${#othersExist}" != 0 ]; then
         addMessage "" "OTHER FILES:"
         for item in "${othersExist[@]}"; do
-            [ ! -e "$pwd/$item" ] && item+=" (will be copied)"
+            [ ! -e "$basedir/${item//\//$separator}" ] && \
+                item+=" (will be copied)"
             addMessage "$item"
         done
     fi
@@ -147,17 +181,21 @@ fi
 
 (
 for item in "${ITEMS[@]}"; do
-    src="$pwd/$item"
-    dst="/$item"
-    mkdir -p "${dst%/*}"
+    dst="$item"
+    item="${item//\//$separator}"
+    src="$basedir/${item#/}"
+    mkdir -p "${dst%/*}" || error "Could not create ${dst%/*}"
     if [ ! -e "$src" ]; then
-        mkdir -p "${src%/*}"
-        cp -a "$dst" "$src"
+        mkdir -p "${src%/*}" || error "Could not create ${src%/*}"
+        cp -a "$dst" "$src" || error "Could not copy $dst to $src"
     fi
-    rm -rf "$dst"
-    mkdir -p "${dst%/*}"
-    ln -s $optRelative "$src" "$dst"
-    chown --no-dereference --reference="$src" "$dst"
+    rm -rf "$dst" || error "Could not delete $dst"
+    mkdir -p "${dst%/*}" || error "Could not create ${dst%/*}"
+    ln -s $optRelative "$src" "$dst" || error "Could not link $src to $dst"
+    if [ "$optPreserveOwner" ]; then
+        chown --no-dereference --reference="$src" "$dst" || \
+            error "Could not change ownership of $dst"
+    fi
 done
 ) |
 progress "Removing existing items and creating symlinks ..."

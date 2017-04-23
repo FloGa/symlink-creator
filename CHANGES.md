@@ -1,3 +1,25 @@
+# Changes in 0.3.0
+
+-   Exit on error
+
+-   Let failed operations be an error
+
+-   Fix existence check for variable
+
+-   Add support for custom basedir
+
+-   Let programm execute as different user
+
+-   Make --root deprecated
+
+-   Change ownership only if flag is given
+
+-   Support custom directory separator
+
+-   Change to input directory before anything else
+
+    This ensures that relative paths as --basedir are resolved correctly.
+
 # Changes in 0.2.1
 
 -   Create directory first before copying
