@@ -115,10 +115,12 @@ for opt in "${OPTS[@]}"; do
     esac
 done
 
+cd "${inputfile%/*}" || error "Directory of input file not accessible!"
+
 if [ "$optBasedir" ]; then
     basedir="$(realpath "$optBasedir")"
 else
-    basedir="$(realpath "${inputfile%/*}")"
+    basedir="$(realpath .)"
 fi
 
 if [ "$optSeparator" ]; then
