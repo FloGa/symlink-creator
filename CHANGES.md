@@ -1,3 +1,7 @@
+# Changes in 0.3.1
+
+-   Use absolute path of inputfile
+
 # Changes in 0.3.0
 
 -   Exit on error

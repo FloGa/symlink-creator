@@ -72,7 +72,7 @@ fi
 
 [ ! -t 0 ] && X=1
 
-inputfile="$1"
+inputfile="$(realpath "$1")"
 
 # Read in all lines starting with "#::". Those lines I declare to be trigger
 # options.
