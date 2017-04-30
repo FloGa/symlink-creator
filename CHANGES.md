@@ -1,3 +1,5 @@
+# Changes in 0.3.1
+
 # Changes in 0.3.0
 
 -   Exit on error
